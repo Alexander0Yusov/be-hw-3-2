@@ -1,13 +1,15 @@
-import { ObjectId, WithId } from 'mongodb';
+import { WithId } from 'mongodb';
 import { db } from '../../db/mongo.db';
 import { DeviceSession } from '../types/device-session';
+import { injectable } from 'inversify';
 
-export const sessionsRepository = {
+@injectable()
+export class SessionsRepository {
   async create(session: DeviceSession): Promise<string> {
     const createdSession = await db.getCollections().sessionCollection.insertOne(session);
 
     return createdSession.insertedId.toString();
-  },
+  }
 
   async update(deviceId: string, previousLastActiveDate: Date, lastActiveDate: Date, expiresAt: Date): Promise<void> {
     const updateResult = await db.getCollections().sessionCollection.updateOne(
@@ -25,7 +27,7 @@ export const sessionsRepository = {
     }
 
     return;
-  },
+  }
 
   async deleteManyExceptCurrent(userId: string, deviceId: string): Promise<boolean> {
     const deleteResult = await db.getCollections().sessionCollection.deleteMany({
@@ -38,7 +40,7 @@ export const sessionsRepository = {
     }
 
     return true;
-  },
+  }
 
   async deleteByDeviceIdAndUserId(deviceId: string, userId: string): Promise<boolean> {
     const deleteResult = await db.getCollections().sessionCollection.deleteOne({
@@ -47,9 +49,9 @@ export const sessionsRepository = {
     });
 
     return deleteResult.acknowledged;
-  },
+  }
 
   async findById(deviceId: string): Promise<WithId<DeviceSession> | null> {
     return await db.getCollections().sessionCollection.findOne({ deviceId });
-  },
-};
+  }
+}

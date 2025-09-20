@@ -1,23 +1,26 @@
 import { Router } from 'express';
 import { errorsCatchMiddleware } from '../../core/middlewares/validation/errors-catch.middleware';
 import { accessTokenGuard } from './guards/access.token.guard';
-import {
-  getAuthMeHandler,
-  postAuthLoginHandler,
-  postAuthLogoutHandler,
-  postAuthRefreshTokenHandler,
-  postAuthRegistrationConfirmationHandler,
-  postAuthRegistrationEmailResendingHandler,
-  postAuthRegistrationHandler,
-} from './handlers';
 import { loginOrEmailDtoValidationMiddleware } from '../validation/login-or-email-dto-validation.middleware';
 import { passwordDtoValidationMiddleware } from '../validation/password-dto-validation.middleware';
 import { userDtoValidationMiddleware } from '../../4-users/validation/user-dto-validation.middleware';
 import { confirmationCodeDtoValidationMiddleware } from '../validation/confirmation-code-dto-validation.middleware';
 import { emailDtoValidationMiddleware } from '../validation/email-dto-validation.middleware';
 import { logAndRateLimitMiddleware } from '../../core/middlewares/log-and-limit/log-and-rate-limit.middleware';
+import { container } from '../../composition-root';
+import { AuthController } from './controller/auth-controller';
 
 export const authRouter = Router({});
+
+const controller = container.get<AuthController>(AuthController);
+
+// authRouter.post(
+//   '/password-recovery',
+
+//   controller. ...,
+// );
+
+//
 
 authRouter.post(
   '/login',
@@ -25,17 +28,17 @@ authRouter.post(
   passwordDtoValidationMiddleware,
   logAndRateLimitMiddleware,
   errorsCatchMiddleware,
-  postAuthLoginHandler,
+  controller.postAuthLoginHandler,
 );
 
-authRouter.get('/me', accessTokenGuard, getAuthMeHandler);
+authRouter.get('/me', accessTokenGuard, controller.getAuthMeHandler);
 
 authRouter.post(
   '/registration',
   userDtoValidationMiddleware,
   logAndRateLimitMiddleware,
   errorsCatchMiddleware,
-  postAuthRegistrationHandler,
+  controller.postAuthRegistrationHandler,
 );
 
 authRouter.post(
@@ -43,7 +46,7 @@ authRouter.post(
   confirmationCodeDtoValidationMiddleware,
   logAndRateLimitMiddleware,
   errorsCatchMiddleware,
-  postAuthRegistrationConfirmationHandler,
+  controller.postAuthRegistrationConfirmationHandler,
 );
 
 authRouter.post(
@@ -51,9 +54,9 @@ authRouter.post(
   emailDtoValidationMiddleware,
   logAndRateLimitMiddleware,
   errorsCatchMiddleware,
-  postAuthRegistrationEmailResendingHandler,
+  controller.postAuthRegistrationEmailResendingHandler,
 );
 
-authRouter.post('/refresh-token', postAuthRefreshTokenHandler);
+authRouter.post('/refresh-token', controller.postAuthRefreshTokenHandler);
 
-authRouter.post('/logout', postAuthLogoutHandler);
+authRouter.post('/logout', controller.postAuthLogoutHandler);

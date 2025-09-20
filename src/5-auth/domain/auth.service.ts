@@ -6,15 +6,23 @@ import { bcryptService } from '../adapters/bcrypt.service';
 import { add, addSeconds } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import { usersRepository } from '../../4-users/repository/users.repository';
+import { UsersRepository } from '../../4-users/repository/users.repository';
 import { User } from '../../4-users/types/user';
-import { usersService } from '../../4-users/application/users.service';
+import { UsersService } from '../../4-users/application/users.service';
 import { nodemailerService } from '../adapters/nodemailer.service';
 import { emailExamples } from '../adapters/email-examples';
 import { SETTINGS } from '../../core/settings/settings';
-import { sessionsService } from '../../7-security/application/sessions.service';
+import { SessionsService } from '../../7-security/application/sessions.service';
+import { inject, injectable } from 'inversify';
 
-export const authService = {
+@injectable()
+export class AuthService {
+  constructor(
+    @inject(UsersRepository) private usersRepository: UsersRepository,
+    @inject(UsersService) private usersService: UsersService,
+    @inject(SessionsService) private sessionsService: SessionsService,
+  ) {}
+
   async loginUser(
     loginOrEmail: string,
     password: string,
@@ -44,7 +52,7 @@ export const authService = {
         deviceId,
       };
 
-      await usersRepository.setRefreshTokenById(result.data!._id, refreshTokenData);
+      await this.usersRepository.setRefreshTokenById(result.data!._id, refreshTokenData);
 
       return {
         status: ResultStatus.Success,
@@ -59,10 +67,10 @@ export const authService = {
       extensions: [{ field: 'loginOrEmail', message: 'Wrong credentials' }],
       data: null,
     };
-  },
+  }
 
   async checkUserCredentials(loginOrEmail: string, password: string): Promise<Result<WithId<User> | null>> {
-    const user = await usersRepository.findByEmailOrLogin(loginOrEmail);
+    const user = await this.usersRepository.findByEmailOrLogin(loginOrEmail);
 
     if (!user)
       return {
@@ -87,10 +95,10 @@ export const authService = {
       data: user,
       extensions: [],
     };
-  },
+  }
 
   async registerUser(login: string, email: string, password: string): Promise<Result<WithId<User> | null>> {
-    const existsLogin = await usersRepository.findByEmailOrLogin(login);
+    const existsLogin = await this.usersRepository.findByEmailOrLogin(login);
 
     if (existsLogin) {
       return {
@@ -101,7 +109,7 @@ export const authService = {
       };
     }
 
-    const existsEmail = await usersRepository.findByEmailOrLogin(email);
+    const existsEmail = await this.usersRepository.findByEmailOrLogin(email);
 
     if (existsEmail) {
       return {
@@ -112,8 +120,8 @@ export const authService = {
       };
     }
 
-    const userId = await usersService.create({ login, email, password });
-    const user = await usersRepository.findById(userId);
+    const userId = await this.usersService.create({ login, email, password });
+    const user = await this.usersRepository.findById(userId);
 
     try {
       await nodemailerService.sendEmail(
@@ -135,10 +143,10 @@ export const authService = {
         extensions: [{ field: 'Internal error', message: 'Mail service error' }],
       };
     }
-  },
+  }
 
   async confirmEmail(code: string): Promise<Result<true | null>> {
-    const user = await usersRepository.findByCode(code);
+    const user = await this.usersRepository.findByCode(code);
 
     if (!user) {
       return {
@@ -158,17 +166,17 @@ export const authService = {
       };
     }
 
-    await usersRepository.confirmEmail(code);
+    await this.usersRepository.confirmEmail(code);
 
     return {
       status: ResultStatus.NoContent,
       data: true,
       extensions: [],
     };
-  },
+  }
 
   async resendConfirmationCode(email: string): Promise<Result<true | null>> {
-    const user = await usersRepository.findByEmailOrLogin(email);
+    const user = await this.usersRepository.findByEmailOrLogin(email);
 
     if (!user) {
       return {
@@ -191,7 +199,7 @@ export const authService = {
     const newCode = uuidv4();
 
     // устанавливаем новый код и время экспирации
-    await usersRepository.prolongationConfirmationCode(email, newCode, add(new Date(), { hours: 1 }));
+    await this.usersRepository.prolongationConfirmationCode(email, newCode, add(new Date(), { hours: 1 }));
 
     // отправляем письмо на почту
     await nodemailerService.sendEmail(email, newCode, emailExamples.registrationEmail);
@@ -201,10 +209,10 @@ export const authService = {
       data: true,
       extensions: [],
     };
-  },
+  }
 
   async updateTokensPair(refreshToken: string): Promise<Result<Record<string, string> | null>> {
-    const user = await usersRepository.findByRefreshToken(refreshToken);
+    const user = await this.usersRepository.findByRefreshToken(refreshToken);
 
     // нет токена в базе или он отозван
     if (!user || user.refreshTokens.find((tokenData) => tokenData.value === refreshToken)?.isRevoked === true) {
@@ -227,7 +235,7 @@ export const authService = {
     }
 
     // меняем статус рефреш токена на негодный
-    await usersRepository.setStatusIsRevokedForRefreshToken(refreshToken);
+    await this.usersRepository.setStatusIsRevokedForRefreshToken(refreshToken);
 
     // находим сессию и берем девайс айди
     const decodedRefreshToken = (await jwtService.decodeToken(refreshToken)) as unknown as {
@@ -254,17 +262,17 @@ export const authService = {
       isRevoked: false,
     };
 
-    await usersRepository.setRefreshTokenById(user._id, refreshTokenData);
+    await this.usersRepository.setRefreshTokenById(user._id, refreshTokenData);
 
     return {
       status: ResultStatus.Success,
       data: { refreshToken: newRefreshToken, accessToken: newAccessToken },
       extensions: [],
     };
-  },
+  }
 
   async logoutUser(refreshToken: string): Promise<Result<true | null>> {
-    const user = await usersRepository.findByRefreshToken(refreshToken);
+    const user = await this.usersRepository.findByRefreshToken(refreshToken);
 
     const refreshTokenData = user!.refreshTokens.find((tokenData) => tokenData.value === refreshToken);
 
@@ -289,18 +297,18 @@ export const authService = {
     }
 
     // меняем статус рефреш токена на негодный
-    await usersRepository.setStatusIsRevokedForRefreshToken(refreshToken);
-    await sessionsService.deleteOne(refreshTokenData?.deviceId || '', user._id.toString());
+    await this.usersRepository.setStatusIsRevokedForRefreshToken(refreshToken);
+    await this.sessionsService.deleteOne(refreshTokenData?.deviceId || '', user._id.toString());
 
     return {
       status: ResultStatus.NoContent,
       data: true,
       extensions: [],
     };
-  },
+  }
 
   async logoutDeviceById(deviceId: string): Promise<Result<true | null>> {
-    const user = await usersRepository.findByDeviceId(deviceId);
+    const user = await this.usersRepository.findByDeviceId(deviceId);
 
     const refreshTokenData = user!.refreshTokens.find((tokenData) => tokenData.deviceId === deviceId);
 
@@ -325,12 +333,12 @@ export const authService = {
     }
 
     // меняем статус рефреш токена на негодный
-    await usersRepository.setStatusIsRevokedForRefreshToken(refreshTokenData!.value);
+    await this.usersRepository.setStatusIsRevokedForRefreshToken(refreshTokenData!.value);
 
     return {
       status: ResultStatus.NoContent,
       data: true,
       extensions: [],
     };
-  },
-};
+  }
+}

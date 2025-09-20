@@ -1,9 +1,10 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { nodemailerService } from '../../5-auth/adapters/nodemailer.service';
-import { authService } from '../../5-auth/domain/auth.service';
+import { AuthService } from '../../5-auth/domain/auth.service';
 import { testSeeder } from './test.seeder';
 import { ResultStatus } from '../../core/result/resultCode';
 import { db } from '../../db/mongo.db';
+import { container } from '../../composition-root';
 
 describe('AUTH-INTEGRATION', () => {
   beforeAll(async () => {
@@ -28,6 +29,8 @@ describe('AUTH-INTEGRATION', () => {
     nodemailerService.sendEmail = jest
       .fn()
       .mockImplementation((email: string, code: string, template: (code: string) => string) => Promise.resolve(true));
+
+    const authService = container.get<AuthService>(AuthService);
 
     const registerUserUseCase = authService.registerUser;
     const loginUserUseCase = authService.loginUser;
@@ -55,6 +58,8 @@ describe('AUTH-INTEGRATION', () => {
   });
 
   describe('Confirm email', () => {
+    const authService = container.get<AuthService>(AuthService);
+
     const confirmEmailUseCase = authService.confirmEmail;
 
     it('should not confirm email if user does not exist', async () => {

@@ -6,7 +6,10 @@ import { commentsService } from '../../../6-comments/application/comments.servic
 import { RequestWithParamsAndBodyAndUserId } from '../../../core/types/requests';
 import { IdType } from '../../../core/types/id';
 import { CommentInputDto } from '../../../6-comments/dto/comment-input.dto';
-import { usersQwRepository } from '../../../4-users/qw-repository/users-qw-repository';
+import { UsersQwRepository } from '../../../4-users/qw-repository/users-qw-repository';
+import { container } from '../../../composition-root';
+
+const usersQwRepository = container.get<UsersQwRepository>(UsersQwRepository);
 
 export async function postCommentHandler(
   req: RequestWithParamsAndBodyAndUserId<IdType, CommentInputDto, IdType>,

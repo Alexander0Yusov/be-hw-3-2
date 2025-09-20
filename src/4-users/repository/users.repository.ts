@@ -2,15 +2,17 @@ import { User } from '../types/user';
 import { db } from '../../db/mongo.db';
 import { ObjectId, WithId } from 'mongodb';
 import { RefreshTokenData } from '../../5-auth/types/refresh-token';
+import { injectable } from 'inversify';
 
-export const usersRepository = {
+@injectable()
+export class UsersRepository {
   async findById(id: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({
       _id: new ObjectId(id),
     });
 
     return user;
-  },
+  }
 
   async findByCode(code: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({ 'emailConfirmation.confirmationCode': code });
@@ -20,7 +22,7 @@ export const usersRepository = {
     }
 
     return null;
-  },
+  }
 
   async findByEmailOrLogin(loginOrEmail: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({
@@ -32,13 +34,13 @@ export const usersRepository = {
     }
 
     return null;
-  },
+  }
 
   async create(user: User): Promise<string> {
     const insertedResult = await db.getCollections().userCollection.insertOne(user);
 
     return insertedResult.insertedId.toString();
-  },
+  }
 
   async delete(id: string): Promise<void> {
     const deleteResult = await db.getCollections().userCollection.deleteOne({
@@ -48,7 +50,7 @@ export const usersRepository = {
     if (deleteResult.deletedCount < 1) {
       throw new Error('Blog not exist');
     }
-  },
+  }
 
   async confirmEmail(code: string): Promise<string | null> {
     const user = await db
@@ -59,7 +61,7 @@ export const usersRepository = {
       );
 
     return user?._id.toString() || null;
-  },
+  }
 
   async prolongationConfirmationCode(email: string, newCode: string, newExpiration: Date): Promise<string | null> {
     const user = await db.getCollections().userCollection.findOneAndUpdate(
@@ -73,20 +75,20 @@ export const usersRepository = {
     );
 
     return user?._id.toString() || null;
-  },
+  }
 
   async setRefreshTokenById(id: ObjectId, refreshTokenData: RefreshTokenData): Promise<true> {
     await db.getCollections().userCollection.updateOne({ _id: id }, { $push: { refreshTokens: refreshTokenData } });
 
     return true;
-  },
+  }
 
   //
   async findByRefreshToken(refreshToken: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({ 'refreshTokens.value': refreshToken });
 
     return user;
-  },
+  }
 
   async setStatusIsRevokedForRefreshToken(refreshToken: string): Promise<boolean> {
     const res = await db
@@ -97,14 +99,14 @@ export const usersRepository = {
       );
 
     return res.acknowledged;
-  },
+  }
 
   //
   async findByDeviceId(deviceId: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({ 'refreshTokens.deviceId': deviceId });
 
     return user;
-  },
+  }
 
   async setRefreshTokenArray(id: string, newRefreshTokens: RefreshTokenData[]): Promise<boolean> {
     const res = await db.getCollections().userCollection.updateOne(
@@ -117,5 +119,5 @@ export const usersRepository = {
     );
 
     return res.acknowledged;
-  },
-};
+  }
+}

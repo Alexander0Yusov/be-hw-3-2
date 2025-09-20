@@ -1,11 +1,15 @@
 import bcrypt from 'bcrypt';
 import { add } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import { usersRepository } from '../repository/users.repository';
+import { UsersRepository } from '../repository/users.repository';
 import { User } from '../types/user';
 import { UserInputModel } from '../types/user-iput-model';
+import { inject, injectable } from 'inversify';
 
-export const usersService = {
+@injectable()
+export class UsersService {
+  constructor(@inject(UsersRepository) private usersRepository: UsersRepository) {}
+
   async create(dto: UserInputModel): Promise<string> {
     const saltRounds = 10;
 
@@ -28,13 +32,13 @@ export const usersService = {
       },
     };
 
-    const newUserId = await usersRepository.create(newUser);
+    const newUserId = await this.usersRepository.create(newUser);
 
     return newUserId;
-  },
+  }
 
   async delete(id: string): Promise<void> {
-    await usersRepository.delete(id);
+    await this.usersRepository.delete(id);
     return;
-  },
-};
+  }
+}

@@ -3,8 +3,10 @@ import { db } from '../../db/mongo.db';
 import { UserViewModel } from '../types/user-view-model';
 import { UserQueryInput } from '../router/input/user-query.input';
 import { mapToUserViewModel } from '../mappers/map-to-user-view-model.util';
+import { injectable } from 'inversify';
 
-export const usersQwRepository = {
+@injectable()
+export class UsersQwRepository {
   async findById(id: string): Promise<UserViewModel | null> {
     const user = await db.getCollections().userCollection.findOne({ _id: new ObjectId(id) });
 
@@ -18,7 +20,7 @@ export const usersQwRepository = {
     }
 
     return null;
-  },
+  }
 
   async findByEmailOrLogin(loginOrEmail: string): Promise<string | null> {
     const user = await db.getCollections().userCollection.findOne({
@@ -30,7 +32,7 @@ export const usersQwRepository = {
     }
 
     return null;
-  },
+  }
 
   async findHashById(id: string): Promise<string> {
     const user = await db.getCollections().userCollection.findOne({ _id: new ObjectId(id) });
@@ -40,7 +42,7 @@ export const usersQwRepository = {
     }
 
     return user.accountData.passwordHash;
-  },
+  }
 
   async findMany(queryDto: UserQueryInput): Promise<any> {
     const { pageNumber, pageSize, sortBy, sortDirection, searchLoginTerm, searchEmailTerm } = queryDto;
@@ -79,5 +81,5 @@ export const usersQwRepository = {
       totalCount,
       items: items.map(mapToUserViewModel),
     };
-  },
-};
+  }
+}
