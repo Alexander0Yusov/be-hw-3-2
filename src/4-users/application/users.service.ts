@@ -30,6 +30,12 @@ export class UsersService {
         expirationDate: add(new Date(), { hours: 1 }),
         isConfirmed: false,
       },
+      passwordRecovery: {
+        sentEmails: [],
+        confirmationCode: '',
+        expirationDate: new Date(),
+        isUsed: true,
+      },
     };
 
     const newUserId = await this.usersRepository.create(newUser);

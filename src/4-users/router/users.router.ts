@@ -18,7 +18,7 @@ usersRouter.get(
   paginationAndSortingValidation(UserSortField),
   query('searchLoginTerm').optional().trim(),
   query('searchEmailTerm').optional().trim(),
-  controller.getUserListHandler,
+  controller.getUserListHandler.bind(controller),
 );
 
 usersRouter.post(
@@ -26,7 +26,7 @@ usersRouter.post(
   superAdminGuardMiddleware,
   userDtoValidationMiddleware,
   errorsCatchMiddleware,
-  controller.postUserHandler,
+  controller.postUserHandler.bind(controller),
 );
 
 usersRouter.delete(
@@ -34,5 +34,5 @@ usersRouter.delete(
   superAdminGuardMiddleware,
   idValidationMiddleware,
   errorsCatchMiddleware,
-  controller.deleteUserHandler,
+  controller.deleteUserHandler.bind(controller),
 );

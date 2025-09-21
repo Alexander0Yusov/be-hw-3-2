@@ -18,7 +18,7 @@ export const userDtoValidationMiddleware = [
     .withMessage('Ожидается строка')
     .notEmpty()
     .withMessage('Имейл обязательный')
-    .matches('^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$')
+    .matches('^[\\w\\-\\.\\+]+@([\\w\\-]+\\.)+[\\w\\-]{2,4}$')
     .withMessage('Невалидный формат'),
 
   body('password')
@@ -30,3 +30,5 @@ export const userDtoValidationMiddleware = [
     .isLength({ min: 6, max: 20 })
     .withMessage('Минимум 6, максимум 20 символов'),
 ];
+
+// .matches('^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$') // нововведение с 3/2 домашки

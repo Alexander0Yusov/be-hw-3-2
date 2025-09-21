@@ -341,4 +341,64 @@ export class AuthService {
       extensions: [],
     };
   }
+
+  //
+  async sendPasswordRecoveryCode(email: string): Promise<Result<true | null>> {
+    const user = await this.usersRepository.findByEmailOrLogin(email);
+
+    if (!user) {
+      return {
+        status: ResultStatus.NoContent,
+        errorMessage: 'NoContent',
+        extensions: [{ field: 'email', message: 'Email not found' }],
+        data: null,
+      };
+    }
+
+    const newCode = uuidv4();
+
+    // устанавливаем новый код и время экспирации
+    await this.usersRepository.setPasswordRecoveryCode(email, newCode, add(new Date(), { hours: 1 }));
+
+    // отправляем письмо на почту
+    await nodemailerService.sendEmail(email, newCode, emailExamples.passwordRecoveryEmail);
+
+    return {
+      status: ResultStatus.NoContent,
+      data: true,
+      extensions: [],
+    };
+  }
+
+  async newPasswordApplying(recoveryCode: string, newPassword: string): Promise<Result<true | null>> {
+    const user = await this.usersRepository.findByRecoveryCode(recoveryCode);
+
+    if (!user) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'BadRequest',
+        extensions: [{ field: 'recoveryCode', message: 'The recovery code is not found' }],
+        data: null,
+      };
+    }
+
+    if (user.passwordRecovery.expirationDate < new Date() || user.passwordRecovery.isUsed) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'BadRequest',
+        extensions: [{ field: 'recoveryCode', message: 'The recovery code expired or already been applied' }],
+        data: null,
+      };
+    }
+
+    const newPasswordHash = await bcryptService.generateHash(newPassword);
+
+    await this.usersRepository.recoveryPassword(recoveryCode, newPasswordHash);
+
+    return {
+      status: ResultStatus.NoContent,
+      data: true,
+      extensions: [],
+    };
+  }
 }

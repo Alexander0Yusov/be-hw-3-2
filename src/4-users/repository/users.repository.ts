@@ -24,6 +24,16 @@ export class UsersRepository {
     return null;
   }
 
+  async findByRecoveryCode(code: string): Promise<WithId<User> | null> {
+    const user = await db.getCollections().userCollection.findOne({ 'passwordRecovery.confirmationCode': code });
+
+    if (user) {
+      return user;
+    }
+
+    return null;
+  }
+
   async findByEmailOrLogin(loginOrEmail: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({
       $or: [{ 'accountData.login': loginOrEmail }, { 'accountData.email': loginOrEmail }],
@@ -63,6 +73,17 @@ export class UsersRepository {
     return user?._id.toString() || null;
   }
 
+  async recoveryPassword(recoveryCode: string, newPasswordHash: string): Promise<string | null> {
+    const user = await db
+      .getCollections()
+      .userCollection.findOneAndUpdate(
+        { 'passwordRecovery.confirmationCode': recoveryCode },
+        { $set: { 'accountData.passwordHash': newPasswordHash, 'passwordRecovery.isUsed': true } },
+      );
+
+    return user?._id.toString() || null;
+  }
+
   async prolongationConfirmationCode(email: string, newCode: string, newExpiration: Date): Promise<string | null> {
     const user = await db.getCollections().userCollection.findOneAndUpdate(
       { 'accountData.email': email },
@@ -70,6 +91,21 @@ export class UsersRepository {
         $set: {
           'emailConfirmation.confirmationCode': newCode,
           'emailConfirmation.expirationDate': newExpiration,
+        },
+      },
+    );
+
+    return user?._id.toString() || null;
+  }
+
+  async setPasswordRecoveryCode(email: string, newCode: string, newExpiration: Date): Promise<string | null> {
+    const user = await db.getCollections().userCollection.findOneAndUpdate(
+      { 'accountData.email': email },
+      {
+        $set: {
+          'passwordRecovery.confirmationCode': newCode,
+          'passwordRecovery.expirationDate': newExpiration,
+          'passwordRecovery.isUsed': false,
         },
       },
     );

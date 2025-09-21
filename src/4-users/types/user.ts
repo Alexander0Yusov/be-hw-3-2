@@ -13,6 +13,12 @@ export type User = {
     expirationDate: Date;
     isConfirmed: boolean;
   };
+  passwordRecovery: {
+    sentEmails: [];
+    confirmationCode: string;
+    expirationDate: Date;
+    isUsed: boolean;
+  };
   refreshTokens: RefreshTokenData[];
   loginAttempts: [];
 };

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../../domain/auth.service';
-import { inject } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { resultCodeToHttpException } from '../../../core/result/resultCodeToHttpException';
 import { RegistrationInputModel } from '../../types/registration-input-model';
 import { createErrorMessages } from '../../../core/utils/error.utils';
@@ -12,6 +12,7 @@ import { AuthInputModel } from '../../types/auth-iput-model';
 import { HttpStatus } from '../../../core/types/HttpStatus';
 import { UsersQwRepository } from '../../../4-users/qw-repository/users-qw-repository';
 
+@injectable()
 export class AuthController {
   constructor(
     @inject(AuthService) private authService: AuthService,
@@ -131,5 +132,35 @@ export class AuthController {
       login: me?.login,
       userId: me?.id,
     });
+  }
+
+  async postAuthPasswordRecoveryHandler(req: Request, res: Response) {
+    const { email } = req.body;
+
+    const result = await this.authService.sendPasswordRecoveryCode(email);
+
+    if (result.data) {
+      res.sendStatus(resultCodeToHttpException(result.status));
+      return;
+    }
+
+    res
+      .status(resultCodeToHttpException(result.status))
+      .send(createErrorMessages([{ field: 'email', message: result.extensions[0]?.message }]));
+  }
+
+  async postAuthNewPasswordHandler(req: Request, res: Response) {
+    const { recoveryCode, newPassword } = req.body;
+
+    const result = await this.authService.newPasswordApplying(recoveryCode, newPassword);
+
+    if (result.data) {
+      res.sendStatus(resultCodeToHttpException(result.status));
+      return;
+    }
+
+    res
+      .status(resultCodeToHttpException(result.status))
+      .send(createErrorMessages([{ field: 'recoveryCode', message: result.extensions[0]?.message }]));
   }
 }

@@ -73,6 +73,12 @@ export const testSeeder = {
         expirationDate: expirationDate ?? add(new Date(), { hours: 1 }),
         isConfirmed: isConfirmed ?? false,
       },
+      passwordRecovery: {
+        sentEmails: [],
+        confirmationCode: '',
+        expirationDate: new Date(),
+        isUsed: true,
+      },
     };
 
     const res = await db.getCollections().userCollection.insertOne({ ...newUser });

@@ -1,4 +1,4 @@
-import { inject } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { UsersService } from '../../application/users.service';
 import { matchedData } from 'express-validator';
 import { setDefaultSortAndPaginationIfNotExist } from '../../../core/helpers/set-default-sort-and-pagination';
@@ -9,6 +9,7 @@ import { Request, Response } from 'express';
 import { UserInputModel } from '../../types/user-iput-model';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 
+@injectable()
 export class UsersController {
   constructor(
     @inject(UsersService) private usersService: UsersService,

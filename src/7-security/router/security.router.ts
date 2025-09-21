@@ -9,14 +9,14 @@ export const securityRouter = Router({});
 
 const controller = container.get<SecurityController>(SecurityController);
 
-securityRouter.get('/devices', refreshTokenGuard, controller.getActiveSessionsHandler);
+securityRouter.get('/devices', refreshTokenGuard, controller.getActiveSessionsHandler.bind(controller));
 
-securityRouter.delete('/devices', refreshTokenGuard, controller.deleteSessionsExcludeCurrentHandler);
+securityRouter.delete('/devices', refreshTokenGuard, controller.deleteSessionsExcludeCurrentHandler.bind(controller));
 
 securityRouter.delete(
   '/devices/:deviceId',
   refreshTokenGuard,
   deviceIdValidationMiddleware,
   errorsCatchMiddleware,
-  controller.deleteSessionByIdHandler,
+  controller.deleteSessionByIdHandler.bind(controller),
 );

@@ -107,8 +107,6 @@ describe('Auth API', () => {
         ?.split(';')[0]
         .split('=')[1];
 
-      console.log(55, refreshToken, 555, res.body.accessToken);
-
       const res2 = await request(app)
         .post(AUTH_PATH + '/refresh-token')
         .set('Cookie', [`refreshToken=${refreshToken}`])
@@ -120,8 +118,6 @@ describe('Auth API', () => {
           .find((c) => c.startsWith('refreshToken='))
           ?.split(';')[0]
           .split('=')[1];
-
-        console.log(66, refreshToken2, 666, res2.body.accessToken);
       }
     }
   });
@@ -141,8 +137,6 @@ describe('Auth API', () => {
         .set('User-Agent', userAgent)
         .set('X-Forwarded-For', fakeIp)
         .send({ loginOrEmail: email, password });
-
-      console.log(999, res.body);
 
       if (res.status !== 200) {
         return;
@@ -166,14 +160,10 @@ describe('Auth API', () => {
     const session_3 = await simulateClientLogin(user.email, user.password, 'Safari', '192.168.1.12');
     const session_4 = await simulateClientLogin(user.email, user.password, 'Edge', '192.168.1.13');
 
-    console.log(888, session_1, session_2, session_3, session_4);
-
     const activeSessions = await request(app)
       .get('/security/devices')
       .set('Authorization', `Bearer ${session_1?.accessToken}`)
       .expect(HttpStatus.Ok);
-
-    console.log(777, activeSessions.body);
 
     // меняем рефреш для сессии 1
     const refreshPair_1_2 = await request(app)
@@ -189,10 +179,6 @@ describe('Auth API', () => {
         .find((c) => c.startsWith('refreshToken='))
         ?.split(';')[0]
         .split('=')[1];
-
-      console.log(600, session_1?.refreshToken, '-----------', refreshToken_1_2);
-
-      console.log(700, session_1?.accessToken, '------------', refreshPair_1_2.body.accessToken);
     }
 
     // проверяем список сессий после обновления токенов. дата активности 1 должна изм
@@ -200,8 +186,6 @@ describe('Auth API', () => {
       .get('/security/devices')
       .set('Authorization', `Bearer ${refreshPair_1_2.body.accessToken}`)
       .expect(HttpStatus.Ok);
-
-    console.log(778, activeSessions_2.body);
 
     // удаляем девайс 2 от имени девайса 1 и проверяем отсутствие
     let deviceId_2;
@@ -221,8 +205,6 @@ describe('Auth API', () => {
       .set('Authorization', `Bearer ${refreshPair_1_2.body.accessToken}`)
       .expect(HttpStatus.Ok);
 
-    console.log(780, activeSessions_3.body);
-
     // Делаем logout девайсом 3. Запрашиваем список девайсов (девайсом 1). В списке не должно быть девайса 3
     await request(app)
       .post(AUTH_PATH + '/logout')
@@ -235,8 +217,6 @@ describe('Auth API', () => {
       .set('Authorization', `Bearer ${refreshPair_1_2.body.accessToken}`)
       .expect(HttpStatus.Ok);
 
-    console.log(781, activeSessions_4.body);
-
     // Удаляем все оставшиеся девайсы (девайсом 1). Запрашиваем список девайсов. В списке должен содержаться только один (текущий) девайс
     await request(app)
       .delete('/security/devices')
@@ -248,7 +228,5 @@ describe('Auth API', () => {
       .get('/security/devices')
       .set('Authorization', `Bearer ${refreshPair_1_2.body.accessToken}`)
       .expect(HttpStatus.Ok);
-
-    console.log(781, activeSessions_5.body);
   });
 });
